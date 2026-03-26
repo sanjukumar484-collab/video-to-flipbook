@@ -242,7 +242,7 @@
     </div>
     <div class="control-group">
       <label>Frames Per Second (sampling)</label>
-      <input type="range" id="fpsRange" min="0.5" max="5" step="0.5" value="1">
+      <input type="range" id="fpsRange" min="0.1" max="5" step="0.1" value="1">
       <span class="range-val" id="fpsVal">1 fps</span>
     </div>
     <div class="control-group">
@@ -265,8 +265,18 @@
       </select>
     </div>
     <div class="control-group">
+      <label>Frame Size (output resolution)</label>
+      <select id="sizeSelect">
+        <option value="1.0">Full (original size)</option>
+        <option value="0.75">¾ Size (75%)</option>
+        <option value="0.5" selected>Half (50%)</option>
+        <option value="0.25">Quarter (25%)</option>
+        <option value="320">Tiny (320px wide)</option>
+      </select>
+    </div>
+    <div class="control-group">
       <label>Max Frames</label>
-      <input type="range" id="maxFrames" min="5" max="60" step="5" value="20">
+      <input type="range" id="maxFrames" min="1" max="60" step="1" value="20">
       <span class="range-val" id="maxFramesVal">20 frames</span>
     </div>
   </div>
@@ -339,7 +349,7 @@ function showToast(msg, dur=4000){
 }
 
 // Range labels
-[['fpsRange','fpsVal',v=>v+' fps'],['edgeRange','edgeVal',v=>v],
+[['fpsRange','fpsVal',v=>parseFloat(v).toFixed(1)+' fps'],['edgeRange','edgeVal',v=>v],
  ['brightRange','brightVal',v=>(v>0?'+':'')+v],['maxFrames','maxFramesVal',v=>v+' frames']]
 .forEach(([id,vid,fmt])=>{
   const el=document.getElementById(id), vl=document.getElementById(vid);
@@ -519,8 +529,19 @@ generateBtn.addEventListener('click', async()=>{
   const total=Math.min(maxF,Math.max(1,Math.floor(duration*fps)));
   const stamps=Array.from({length:total},(_,i)=>Math.min(i*interval,duration-0.05));
 
-  processCanvas.width=video.videoWidth||640;
-  processCanvas.height=video.videoHeight||360;
+  const sizeVal = document.getElementById('sizeSelect').value;
+  const origW = video.videoWidth || 640;
+  const origH = video.videoHeight || 360;
+  let outW, outH;
+  if (sizeVal === '320') {
+    outW = 320; outH = Math.round(origH * (320 / origW));
+  } else {
+    const scale = parseFloat(sizeVal);
+    outW = Math.round(origW * scale);
+    outH = Math.round(origH * scale);
+  }
+  processCanvas.width  = outW;
+  processCanvas.height = outH;
 
   const allFrames=[];
 
